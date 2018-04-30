@@ -6,12 +6,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.GridLayoutManager.SpanSizeLookup;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.support.v7.widget.helper.ItemTouchHelper.Callback;
 import android.util.Log;
+import android.view.View;
 import cc.lijingbo.dragrecyclerview.adapter.DragAdapter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -57,12 +59,37 @@ public class MainActivity extends AppCompatActivity {
             mList = gson.fromJson(list, type);
         }
 
+        final DragAdapter.OnItemClickListener mlistener = new DragAdapter.OnItemClickListener() {
+            @Override
+            public void onClickEvent(View v, int position, ViewHolder vh) {
+
+            }
+
+            @Override
+            public void onLongClickEvent(View v, int position, ViewHolder vh) {
+                itemTouchHelper.startDrag(vh);
+            }
+        };
+
+        dragAdapter = new DragAdapter(MainActivity.this, mList);
+        dragAdapter.setAdapterClickLisener(mlistener);
         mRecyclerView = findViewById(R.id.recyclerview);
         mLayoutManager = new GridLayoutManager(MainActivity.this, 4);
+        // 设置 GridLayout 一行显示几个 item ，在 item 为0 或者9 的时候，一个 item 占用三个位置，表示该 item 独自占用一行
+        mLayoutManager.setSpanSizeLookup(new SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (position == 0 || position == 9) {
+                    return 4;
+                }
+                return 1;
+            }
+        });
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(MainActivity.this);
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        dragAdapter = new DragAdapter(MainActivity.this, mList);
         mRecyclerView.setAdapter(dragAdapter);
         itemTouchHelper = new ItemTouchHelper(new Callback() {
             /**
@@ -92,11 +119,36 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "onMove()");
                 int fromPosition = viewHolder.getAdapterPosition();
                 int targetPosition = target.getAdapterPosition();
-                DragBean dragBean = mList.get(fromPosition);
-                mList.remove(fromPosition);
-                mList.add(targetPosition, dragBean);
-                dragAdapter.notifyItemMoved(fromPosition, targetPosition);
+                Log.e(TAG, "fromPosition:" + fromPosition + ",targetPosition:" + targetPosition);
+                if (targetPosition == 0 || targetPosition == 9) {
+                    targetPosition = fromPosition;
+                }
+                int actualFromPosition;
+                int actualTargetPosition;
+                if (fromPosition < 9) {
+                    actualFromPosition = fromPosition - 1;
+                } else if (fromPosition > 9) {
+                    actualFromPosition = fromPosition - 2;
+                } else {
+                    actualFromPosition = fromPosition;
+                }
+
+                if (targetPosition < 9) {
+                    actualTargetPosition = targetPosition - 1;
+                } else if (targetPosition > 9) {
+                    actualTargetPosition = targetPosition - 2;
+                } else {
+                    actualTargetPosition = targetPosition;
+                }
+
+                if (targetPosition != 0 || targetPosition != 9) {
+                    DragBean dragBean = mList.get(actualFromPosition);
+                    mList.remove(actualFromPosition);
+                    mList.add(actualTargetPosition, dragBean);
+                    dragAdapter.notifyItemMoved(fromPosition, targetPosition);
+                }
                 return true;
+
             }
 
             /**
@@ -111,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             /**
-             * 长按的时候选中的 item, 给当前 item 设置一个高亮背景色
+             * 长按的时候选中的 item, 给当前 item 设置一个背景色
              */
             @Override
             public void onSelectedChanged(ViewHolder viewHolder, int actionState) {
@@ -124,13 +176,31 @@ public class MainActivity extends AppCompatActivity {
             }
 
             /**
-             * 松手以后，去掉高亮背景色
+             * 松手以后，去掉背景色
              */
             @Override
             public void clearView(RecyclerView recyclerView, ViewHolder viewHolder) {
                 Log.e(TAG, "clearView()");
                 super.clearView(recyclerView, viewHolder);
                 viewHolder.itemView.setBackgroundColor(0);
+            }
+
+            /**
+             * 默认为 true ，表示长按可用， false 表示长按不可用
+             */
+            @Override
+            public boolean isLongPressDragEnabled() {
+                Log.e(TAG, "isLongPressDragEnabled()");
+                return false;
+            }
+
+            /**
+             * 默认为 true ,表示滑动可用，false 表示滑动不可用。
+             */
+            @Override
+            public boolean isItemViewSwipeEnabled() {
+                Log.e(TAG, "isItemViewSwipeEnabled()");
+                return false;
             }
         });
         itemTouchHelper.attachToRecyclerView(mRecyclerView);
