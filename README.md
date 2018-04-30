@@ -295,6 +295,25 @@
             }
         });
         itemTouchHelper.attachToRecyclerView(mRecyclerView);
+
+    // adapter 中可点击 item 的点击事件
+                dragViewHolder.dragLayout.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mListener != null) {
+                        mListener.onClickEvent(v, actualPosition, holder);
+                    }
+                }
+            });
+            dragViewHolder.dragLayout.setOnLongClickListener(new OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    if (mListener != null) {
+                        mListener.onLongClickEvent(v, actualPosition, holder);
+                    }
+                    return true;
+                }
+            });
 ```
 
 ## 注意
