@@ -1,5 +1,6 @@
 ## RecyclerView 与 ItemTouchHelper 实现拖拽效果
-
+## 截图
+![image](drag2.gif)
 ## 需求
 - ```App``` 开发新的需求，要求 ```RecyclerView``` 实现的九宫格样式可以拖拽，松手以后变更位置，类似于手机桌面拖动 ```app``` 变更位置。
 ## 分析
